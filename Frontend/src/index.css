@@ -1,0 +1,118 @@
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS — DO NOT DELETE THIS COMMENT */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@400;500;600;700&display=swap');
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED — DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* END TAILWIND IMPORTS — ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+@layer base {
+  :root {
+    --background: 210 40% 98%; /* Soft cool white/gray */
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 1rem;
+    /* MindCare Custom Colors - Light */
+    --mc-bg: #F4F7FB;
+    --mc-surface: rgba(255, 255, 255, 0.7);
+    --mc-surface-solid: #FFFFFF;
+    --mc-border: rgba(255, 255, 255, 0.5);
+    --mc-text: #1E293B;
+    --mc-text-muted: #64748B;
+    --mc-calm: #A7F3D0; /* Mint */
+    --mc-stress: #FDE047; /* Amber/Yellow */
+    --mc-sad: #BFDBFE; /* Soft Blue */
+    --mc-anxious: #E9D5FF; /* Lavender */
+    --mc-crisis: #FECDD3; /* Soft Pink/Red */
+  }
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+    /* MindCare Custom Colors - Dark */
+    --mc-bg: #0F172A; /* Deep Navy */
+    --mc-surface: rgba(30, 41, 59, 0.6);
+    --mc-surface-solid: #1E293B;
+    --mc-border: rgba(255, 255, 255, 0.1);
+    --mc-text: #F8FAFC;
+    --mc-text-muted: #94A3B8;
+    --mc-calm: #059669; /* Darker Mint */
+    --mc-stress: #D97706; /* Darker Amber */
+    --mc-sad: #2563EB; /* Darker Blue */
+    --mc-anxious: #9333EA; /* Darker Lavender */
+    --mc-crisis: #9F1239; /* Darker Pink/Red */
+  }
+}
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-[var(--mc-bg)] text-[var(--mc-text)] transition-colors duration-500 ease-in-out;
+    font-family: 'Inter', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+/* Glassmorphism utilities */
+.glass-panel {
+  background: var(--mc-surface);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--mc-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+}
+.dark .glass-panel {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+/* Custom Scrollbar for a cleaner look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--mc-text-muted);
+  border-radius: 10px;
+  opacity: 0.5;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mc-text);
+}
