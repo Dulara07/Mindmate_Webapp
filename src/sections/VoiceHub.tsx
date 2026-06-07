@@ -80,12 +80,16 @@ export function VoiceHub({ onTriggerCrisis }: VoiceHubProps) {
 
     if (lowerText.includes('stress') || lowerText.includes('overwhelmed')) {
       setEmotion('stressed');
-    } else if (lowerText.includes('sad') || lowerText.includes('down')) {
+    } else if (lowerText.includes('sad') || lowerText.includes('down') || lowerText.includes('depressed')) {
       setEmotion('sad');
-    } else if (lowerText.includes('anxious') || lowerText.includes('worry')) {
+    } else if (lowerText.includes('anxious') || lowerText.includes('worry') || lowerText.includes('nervous')) {
       setEmotion('anxious');
-    } else if (lowerText.includes('calm') || lowerText.includes('good')) {
+    } else if (lowerText.includes('calm') || lowerText.includes('good') || lowerText.includes('peaceful')) {
       setEmotion('calm');
+    } else if (lowerText.includes('happy') || lowerText.includes('joy') || lowerText.includes('great') || lowerText.includes('excited')) {
+      setEmotion('happy');
+    } else if (lowerText.includes('confused') || lowerText.includes('lost') || lowerText.includes('unsure') || lowerText.includes('don\'t know')) {
+      setEmotion('confused');
     }
 
     setOrbState('speaking');
@@ -128,45 +132,46 @@ export function VoiceHub({ onTriggerCrisis }: VoiceHubProps) {
     'I need support'
   ];
 
+  const hasUserMessages = messages.some(m => m.sender === 'user');
+
   return (
     <div className="h-full min-h-0 flex flex-col relative w-full">
-      {/* Top section: Orb and Emotion Label */}
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[200px] sm:min-h-[240px] xl:min-h-[250px] px-2 sm:px-4">
+      {/* Top section: Orb and Emotion Label — compact, does not grow */}
+      <motion.div
+        className="flex-shrink-0 flex flex-col items-center px-2 sm:px-4"
+        animate={{
+          paddingTop: hasUserMessages ? '0.5rem' : '1.5rem',
+          paddingBottom: hasUserMessages ? '0.25rem' : '1rem',
+        }}
+        transition={{ duration: 0.4, ease: 'easeInOut' }}
+      >
         <motion.div
-          initial={{
-            opacity: 0,
-            y: 20
-          }}
-          animate={{
-            opacity: 1,
-            y: 0
-          }}
-          className="mb-3 sm:mb-4 flex flex-col items-center w-full">
-
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center w-full"
+        >
           <VoiceOrb state={orbState} emotion={emotion} />
 
           <motion.div
-            className="mt-3 sm:mt-4 px-4 py-2 rounded-full bg-mc-surface-solid border border-mc-border shadow-sm flex items-center gap-2 flex-col sm:flex-row text-center sm:text-left"
-            animate={{
-              opacity: emotion !== 'neutral' ? 1 : 0
-            }}>
+            className="mt-2 sm:mt-3 px-4 py-1.5 rounded-full bg-mc-surface-solid border border-mc-border shadow-sm flex items-center gap-2"
+            animate={{ opacity: emotion !== 'neutral' ? 1 : 0 }}
+          >
             <div
-              className="w-2 h-2 rounded-full"
-              style={{
-                backgroundColor: `var(--mc-${emotion})`
-              }} />
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: `var(--mc-${emotion})` }}
+            />
             <span className="text-sm font-medium text-mc-text capitalize">
               Sensing: {emotion}
             </span>
-            <span className="text-xs text-mc-text-muted capitalize sm:ml-2">
+            <span className="text-xs text-mc-text-muted capitalize ml-2">
               Voice: {voiceStatus === 'idle' ? 'ready' : voiceStatus}
             </span>
           </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
 
-      {/* Bottom section: Chat and Controls */}
-      <div className="w-full max-w-4xl mx-auto glass-panel rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 mb-4 sm:mb-6 flex flex-col min-h-[240px] lg:min-h-[240px] lg:h-[28vh]">
+      {/* Bottom section: Chat and Controls — fills all remaining space */}
+      <div className="flex-1 min-h-0 w-full max-w-4xl mx-auto glass-panel rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 mb-4 sm:mb-6 flex flex-col mt-3 sm:mt-4 overflow-hidden">
         {/* Transcript Area */}
         <div className="flex-1 overflow-y-auto mb-4 pr-1 sm:pr-2 space-y-3 sm:space-y-4">
           {messages.map((msg) => (

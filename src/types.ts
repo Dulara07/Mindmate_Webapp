@@ -16,7 +16,7 @@ export type Mood =
 'Anxious' |
 'Tired';
 
-export type EmotionTone = 'calm' | 'stressed' | 'sad' | 'anxious' | 'neutral';
+export type EmotionTone = 'calm' | 'stressed' | 'sad' | 'anxious' | 'happy' | 'confused' | 'neutral';
 
 export interface Message {
   id: string;
