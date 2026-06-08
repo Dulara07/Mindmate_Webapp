@@ -11,11 +11,16 @@ import {
 'recharts';
 import { Mood } from '../types';
 import { cn } from '../lib/utils';
+import { getMoodHistory, logMoodEntry, MoodHistoryEntry } from '../lib/api';
 
 interface MoodEntry {
-  mood: Mood;
+  mood: string;
   score: number;
   createdAt: string;
+}
+
+interface MoodTrackerProps {
+  sessionId: string | null;
 }
 const moodOptions: {
   label: Mood;
@@ -109,6 +114,16 @@ function loadMoodEntries(): MoodEntry[] {
   }
 }
 
+function mapHistoryEntry(entry: MoodHistoryEntry): MoodEntry {
+  const mood = entry.mood;
+
+  return {
+    mood,
+    score: mood in moodScores ? moodScores[mood as Mood] : 5,
+    createdAt: entry.created_at,
+  };
+}
+
 function buildChartData(entries: MoodEntry[]) {
   const lastSevenDays = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
@@ -161,18 +176,48 @@ function buildChartData(entries: MoodEntry[]) {
   return chartData;
 }
 
-export function MoodTracker() {
+export function MoodTracker({ sessionId }: MoodTrackerProps) {
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [savedEntries, setSavedEntries] = useState<MoodEntry[]>([]);
   const [saveStatus, setSaveStatus] = useState('');
 
   useEffect(() => {
-    setSavedEntries(loadMoodEntries());
-  }, []);
+    let isActive = true;
+
+    if (!sessionId) {
+      setSavedEntries(loadMoodEntries());
+      return;
+    }
+
+    getMoodHistory(sessionId)
+      .then((result) => {
+        if (!isActive) {
+          return;
+        }
+
+        const historyEntries = result.history.map(mapHistoryEntry);
+        setSavedEntries(historyEntries);
+
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(MOOD_STORAGE_KEY, JSON.stringify(historyEntries));
+        }
+      })
+      .catch(() => {
+        if (!isActive) {
+          return;
+        }
+
+        setSavedEntries(loadMoodEntries());
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [sessionId]);
 
   const chartData = useMemo(() => buildChartData(savedEntries), [savedEntries]);
 
-  function handleSaveMood() {
+  async function handleSaveMood() {
     if (!selectedMood) {
       return;
     }
@@ -184,9 +229,18 @@ export function MoodTracker() {
     };
 
     const nextEntries = [nextEntry, ...savedEntries].slice(0, 120);
-    setSavedEntries(nextEntries);
     setSelectedMood(null);
     setSaveStatus(`Saved ${nextEntry.mood.toLowerCase()} mood to your history.`);
+
+    if (sessionId) {
+      try {
+        await logMoodEntry(sessionId, selectedMood);
+      } catch {
+        // Keep the local cache if the backend write fails.
+      }
+    }
+
+    setSavedEntries(nextEntries);
 
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(MOOD_STORAGE_KEY, JSON.stringify(nextEntries));

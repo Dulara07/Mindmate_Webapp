@@ -11,6 +11,7 @@ import { LearnLibrary } from './sections/LearnLibrary';
 import { Section } from './types';
 import { cn } from './lib/utils';
 import { useScreenInit } from './useScreenInit.js';
+import { createSession } from './lib/api';
 type BreathingSessionState = {
   isActive: boolean;
   phase: 'inhale' | 'hold' | 'exhale' | 'hold-empty';
@@ -18,6 +19,13 @@ type BreathingSessionState = {
 };
 export function App() {
   const screenInit = useScreenInit();
+  const [sessionId, setSessionId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+
+    return window.sessionStorage.getItem('mindmate.sessionId');
+  });
   const [activeSection, setActiveSection] = useState<Section>(
     screenInit?.activeSection as Section ?? 'dashboard'
   );
@@ -30,6 +38,36 @@ export function App() {
     phase: 'inhale',
     timeLeft: 4
   });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (sessionId) {
+      window.sessionStorage.setItem('mindmate.sessionId', sessionId);
+      return;
+    }
+
+    let isActive = true;
+
+    createSession()
+      .then(({ sessionId: nextSessionId }) => {
+        if (!isActive) {
+          return;
+        }
+
+        setSessionId(nextSessionId);
+        window.sessionStorage.setItem('mindmate.sessionId', nextSessionId);
+      })
+      .catch(() => {
+        // The chat flow can still create a session server-side if this prefetch fails.
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [sessionId]);
   // Handle dark mode class on body
   useEffect(() => {
     if (isDarkMode) {
@@ -48,9 +86,15 @@ export function App() {
   const renderContent = () => {
     switch (activeSection) {
       case 'dashboard':
-        return <VoiceHub onTriggerCrisis={() => setIsCrisisMode(true)} />;
+        return (
+          <VoiceHub
+            onTriggerCrisis={() => setIsCrisisMode(true)}
+            sessionId={sessionId}
+            onSessionIdChange={setSessionId}
+          />
+        );
       case 'mood':
-        return <MoodTracker />;
+        return <MoodTracker sessionId={sessionId} />;
       case 'breathing':
         return (
           <BreathingMode onStateChange={setBreathingState} />
