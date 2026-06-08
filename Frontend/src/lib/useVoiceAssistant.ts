@@ -1,204 +1,116 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-export type VoiceStatus = 'idle' | 'listening' | 'speaking';
+type Status = 'idle' | 'listening' | 'speaking';
 
-type SpeechRecognitionResultLike = {
-  isFinal: boolean;
-  0: {
-    transcript: string;
-  };
-};
+interface Options {
+  onTranscript: (text: string) => void;
+  lang?: string;
+}
 
-type SpeechRecognitionEventLike = {
-  resultIndex: number;
-  results: SpeechRecognitionResultLike[];
-};
+/**
+ * Web Speech API voice assistant hook.
+ *
+ * Key perf choices to keep latency low:
+ *  - interimResults: true  → we get partial results, so we can detect
+ *    `isFinal` and act on it immediately instead of waiting for `onend`
+ *    (which only fires after the browser's silence timeout, ~1.5–3s).
+ *  - continuous: false     → one utterance per start; recognition ends
+ *    cleanly after the final result.
+ *  - rec.stop() on first final result → releases the mic right away.
+ *
+ * Place this file at: src/lib/useVoiceAssistant.ts
+ */
+export function useVoiceAssistant({ onTranscript, lang = 'en-US' }: Options) {
+  const [status, setStatus] = useState<Status>('idle');
+  const recognitionRef = useRef<any>(null);
 
-type SpeechRecognitionInstanceLike = {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start: () => void;
-  stop: () => void;
-  onstart: null | (() => void);
-  onresult: null | ((event: SpeechRecognitionEventLike) => void);
-  onerror: null | ((event: { error: string }) => void);
-  onend: null | (() => void);
-};
+  // Keep a ref to the latest callback so the recognition instance
+  // (created once in an effect) always calls the freshest handler.
+  const onTranscriptRef = useRef(onTranscript);
+  onTranscriptRef.current = onTranscript;
 
-type VoiceAssistantOptions = {
-  onTranscript?: (text: string) => void;
-};
+  const SpeechRecognition =
+    typeof window !== 'undefined'
+      ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      : null;
 
-export function useVoiceAssistant(options: VoiceAssistantOptions = {}) {
-  const [status, setStatus] = useState<VoiceStatus>('idle');
-  const [isSupported, setIsSupported] = useState(true);
-  const recognitionRef = useRef<SpeechRecognitionInstanceLike | null>(null);
-  const onTranscriptRef = useRef(options.onTranscript);
+  const isSupported =
+    !!SpeechRecognition &&
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window;
 
   useEffect(() => {
-    onTranscriptRef.current = options.onTranscript;
-  }, [options.onTranscript]);
+    if (!SpeechRecognition) return;
 
-  useEffect(() => {
-    const speechWindow = window as typeof window & {
-      SpeechRecognition?: new () => SpeechRecognitionInstanceLike;
-      webkitSpeechRecognition?: new () => SpeechRecognitionInstanceLike;
-    };
+    const rec = new SpeechRecognition();
+    rec.lang = lang;
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
 
-    setIsSupported(
-      Boolean(speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition)
-    );
-  }, []);
-
-  const ensureRecognition = () => {
-    if (recognitionRef.current) {
-      return recognitionRef.current;
-    }
-
-    const speechWindow = window as typeof window & {
-      SpeechRecognition?: new () => SpeechRecognitionInstanceLike;
-      webkitSpeechRecognition?: new () => SpeechRecognitionInstanceLike;
-    };
-
-    const RecognitionCtor =
-      speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
-
-    if (!RecognitionCtor) {
-      setIsSupported(false);
-      return null;
-    }
-
-    const recognition = new RecognitionCtor();
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onstart = () => {
-      setStatus('listening');
-    };
-
-    recognition.onresult = (event) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
-
-      for (let index = event.resultIndex; index < event.results.length; index += 1) {
-        const result = event.results[index];
-        const transcript = result[0]?.transcript ?? '';
-
-        if (result.isFinal) {
-          finalTranscript += transcript;
-        } else {
-          interimTranscript += transcript;
+    rec.onresult = (e: any) => {
+      // Walk the results; the instant one is final, send it and stop.
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) {
+          const text = (r[0]?.transcript ?? '').trim();
+          if (text) onTranscriptRef.current(text);
+          try { rec.stop(); } catch { /* noop */ }
+          return;
         }
       }
-
-      const transcript = finalTranscript || interimTranscript;
-
-      if (finalTranscript.trim()) {
-        onTranscriptRef.current?.(finalTranscript.trim());
-        recognition.stop();
-      }
-
-      return transcript;
     };
 
-    recognition.onerror = () => {
+    rec.onend = () => {
+      setStatus((s) => (s === 'speaking' ? s : 'idle'));
+    };
+
+    rec.onerror = () => {
       setStatus('idle');
     };
 
-    recognition.onend = () => {
-      setStatus((current) => (current === 'speaking' ? current : 'idle'));
+    recognitionRef.current = rec;
+
+    return () => {
+      try { rec.abort(); } catch { /* noop */ }
+      recognitionRef.current = null;
     };
+  }, [lang, SpeechRecognition]);
 
-    recognitionRef.current = recognition;
-    return recognition;
-  };
+  const toggleListening = useCallback(() => {
+    const rec = recognitionRef.current;
+    if (!rec) return;
 
-  const startListening = () => {
-    if (!isSupported) {
-      return false;
-    }
-
-    const recognition = ensureRecognition();
-    if (!recognition) {
-      return false;
+    if (status === 'listening') {
+      try { rec.stop(); } catch { /* noop */ }
+      setStatus('idle');
+      return;
     }
 
     try {
-      recognition.start();
-      return true;
+      rec.start();
+      setStatus('listening');
     } catch {
-      setStatus('idle');
-      return false;
+      // rec.start() throws if it's already started — safe to ignore.
     }
-  };
+  }, [status]);
 
-  const stopListening = () => {
-    recognitionRef.current?.stop();
-    setStatus((current) => (current === 'speaking' ? current : 'idle'));
-  };
+  const speak = useCallback(
+    (text: string): boolean => {
+      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+        return false;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.onstart = () => setStatus('speaking');
+      utterance.onend = () => setStatus('idle');
+      utterance.onerror = () => setStatus('idle');
+      window.speechSynthesis.speak(utterance);
+      return true;
+    },
+    [lang]
+  );
 
-  const toggleListening = () => {
-    if (status === 'listening') {
-      stopListening();
-      return false;
-    }
-
-    return startListening();
-  };
-
-  const speak = (text: string) => {
-    const speechSynthesisApi = window.speechSynthesis;
-
-    if (!speechSynthesisApi) {
-      return false;
-    }
-
-    speechSynthesisApi.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.88;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
-    const voices = speechSynthesisApi.getVoices();
-    const selectedVoice =
-      voices.find(
-        (voice) =>
-          voice.name.includes('Premium') ||
-          voice.name.includes('Enhanced') ||
-          voice.name.includes('Google US English') ||
-          voice.name.includes('Samantha') ||
-          (voice.lang === 'en-US' && voice.name.toLowerCase().includes('female'))
-      ) ?? voices.find((voice) => voice.lang === 'en-US') ?? voices[0];
-
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-    }
-
-    utterance.onstart = () => {
-      setStatus('speaking');
-    };
-
-    utterance.onend = () => {
-      setStatus('idle');
-    };
-
-    utterance.onerror = () => {
-      setStatus('idle');
-    };
-
-    speechSynthesisApi.speak(utterance);
-    return true;
-  };
-
-  return {
-    isSupported,
-    status,
-    startListening,
-    stopListening,
-    toggleListening,
-    speak
-  };
+  return { isSupported, status, toggleListening, speak };
 }

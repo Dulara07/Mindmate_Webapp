@@ -57,7 +57,31 @@ export function VoiceHub({ onTriggerCrisis }: VoiceHubProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // ── Ensure we always have a valid sessionId ──────────────────────────────────
+  // ── Pre-create the session on mount so the first message doesn't pay
+  //    for two sequential round-trips (session/new → chat). ─────────────────────
+  useEffect(() => {
+    if (sessionId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/session/new`, { method: 'POST' });
+        const data = await res.json();
+        if (cancelled) return;
+        const id: string = data.sessionId;
+        if (id) {
+          localStorage.setItem(SESSION_KEY, id);
+          setSessionId(id);
+        }
+      } catch {
+        // ensureSession() below will retry / fall back on first send.
+      }
+    })();
+    return () => { cancelled = true; };
+    // run once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Ensure we always have a valid sessionId (fallback path) ──────────────────
   const ensureSession = useCallback(async (): Promise<string> => {
     if (sessionId) return sessionId;
     try {
