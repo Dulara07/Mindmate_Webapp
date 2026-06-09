@@ -22,6 +22,7 @@ interface MoodEntry {
 interface MoodTrackerProps {
   sessionId: string | null;
 }
+
 const moodOptions: {
   label: Mood;
   emoji: string;
@@ -73,8 +74,6 @@ const moodOptions: {
   color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
 }];
 
-const MOOD_STORAGE_KEY = 'mindmate.moodEntries';
-
 const moodScores: Record<Mood, number> = {
   Happy: 9,
   Calm: 8,
@@ -96,13 +95,21 @@ function getDateKey(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function loadMoodEntries(): MoodEntry[] {
+function getMoodStorageKey(sessionId: string) {
+  return `mindmate.moodEntries.${sessionId}`;
+}
+
+function loadMoodEntries(sessionId: string | null): MoodEntry[] {
   if (typeof window === 'undefined') {
     return [];
   }
 
+  if (!sessionId) {
+    return [];
+  }
+
   try {
-    const storedEntries = window.localStorage.getItem(MOOD_STORAGE_KEY);
+    const storedEntries = window.localStorage.getItem(getMoodStorageKey(sessionId));
     if (!storedEntries) {
       return [];
     }
@@ -185,7 +192,7 @@ export function MoodTracker({ sessionId }: MoodTrackerProps) {
     let isActive = true;
 
     if (!sessionId) {
-      setSavedEntries(loadMoodEntries());
+      setSavedEntries([]);
       return;
     }
 
@@ -199,7 +206,7 @@ export function MoodTracker({ sessionId }: MoodTrackerProps) {
         setSavedEntries(historyEntries);
 
         if (typeof window !== 'undefined') {
-          window.localStorage.setItem(MOOD_STORAGE_KEY, JSON.stringify(historyEntries));
+          window.localStorage.setItem(getMoodStorageKey(sessionId), JSON.stringify(historyEntries));
         }
       })
       .catch(() => {
@@ -207,7 +214,7 @@ export function MoodTracker({ sessionId }: MoodTrackerProps) {
           return;
         }
 
-        setSavedEntries(loadMoodEntries());
+        setSavedEntries(loadMoodEntries(sessionId));
       });
 
     return () => {
@@ -242,8 +249,8 @@ export function MoodTracker({ sessionId }: MoodTrackerProps) {
 
     setSavedEntries(nextEntries);
 
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(MOOD_STORAGE_KEY, JSON.stringify(nextEntries));
+    if (typeof window !== 'undefined' && sessionId) {
+      window.localStorage.setItem(getMoodStorageKey(sessionId), JSON.stringify(nextEntries));
     }
   }
 

@@ -19,6 +19,7 @@ type BreathingSessionState = {
 };
 export function App() {
   const screenInit = useScreenInit();
+  const [conversationResetToken, setConversationResetToken] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(() => {
     if (typeof window === 'undefined') {
       return null;
@@ -67,7 +68,7 @@ export function App() {
     return () => {
       isActive = false;
     };
-  }, [sessionId]);
+  }, [sessionId, conversationResetToken]);
   // Handle dark mode class on body
   useEffect(() => {
     if (isDarkMode) {
@@ -83,6 +84,16 @@ export function App() {
       setActiveSection(section);
     }
   };
+
+  const resetConversation = () => {
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem('mindmate.sessionId');
+    }
+
+    setSessionId(null);
+    setConversationResetToken((current) => current + 1);
+  };
+
   const renderContent = () => {
     switch (activeSection) {
       case 'dashboard':
@@ -91,6 +102,8 @@ export function App() {
             onTriggerCrisis={() => setIsCrisisMode(true)}
             sessionId={sessionId}
             onSessionIdChange={setSessionId}
+            onRestartConversation={resetConversation}
+            conversationResetToken={conversationResetToken}
           />
         );
       case 'mood':
@@ -104,7 +117,15 @@ export function App() {
       case 'learn':
         return <LearnLibrary />;
       default:
-        return <VoiceHub onTriggerCrisis={() => setIsCrisisMode(true)} />;
+        return (
+          <VoiceHub
+            onTriggerCrisis={() => setIsCrisisMode(true)}
+            sessionId={sessionId}
+            onSessionIdChange={setSessionId}
+            onRestartConversation={resetConversation}
+            conversationResetToken={conversationResetToken}
+          />
+        );
     }
   };
   return (

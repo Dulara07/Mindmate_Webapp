@@ -11,22 +11,32 @@ interface VoiceHubProps {
   onTriggerCrisis: () => void;
   sessionId: string | null;
   onSessionIdChange: (sessionId: string) => void;
+  onRestartConversation: () => void;
+  conversationResetToken: number;
 }
 
-export function VoiceHub({ onTriggerCrisis, sessionId, onSessionIdChange }: VoiceHubProps) {
+function createWelcomeMessage(): Message {
+  return {
+    id: '1',
+    text: "Hi there. I'm Meena, and I'm here to listen. How are you feeling today?",
+    sender: 'ai',
+    timestamp: new Date(),
+  };
+}
+
+export function VoiceHub({
+  onTriggerCrisis,
+  sessionId,
+  onSessionIdChange,
+  onRestartConversation,
+  conversationResetToken,
+}: VoiceHubProps) {
   const [orbState, setOrbState] = useState<'idle' | 'listening' | 'speaking'>('idle');
   const [emotion, setEmotion] = useState<EmotionTone>('neutral');
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: "Hi there. I'm Meena, and I'm here to listen. How are you feeling today?",
-      sender: 'ai',
-      timestamp: new Date()
-    }
-  ]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState<Message[]>(() => [createWelcomeMessage()]);
+  const transcriptRef = useRef<HTMLDivElement>(null);
   const handleSendRef = useRef<(text: string) => void>(() => undefined);
   const crisisKeywords = useMemo(
     () => ['hurt myself', 'suicide', 'end it', "can't go on", 'die'],
@@ -36,6 +46,7 @@ export function VoiceHub({ onTriggerCrisis, sessionId, onSessionIdChange }: Voic
     isSupported: isVoiceSupported,
     status: voiceStatus,
     toggleListening,
+    stopListening,
     speak
   } = useVoiceAssistant({
     onTranscript: (text) => {
@@ -47,7 +58,33 @@ export function VoiceHub({ onTriggerCrisis, sessionId, onSessionIdChange }: Voic
   useEffect(() => { setOrbState(voiceStatus); }, [voiceStatus]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setMessages([createWelcomeMessage()]);
+    setInputText('');
+    setIsSending(false);
+    setEmotion('neutral');
+    setOrbState('idle');
+    window.speechSynthesis?.cancel();
+    stopListening();
+
+    const transcriptElement = transcriptRef.current;
+    if (transcriptElement) {
+      transcriptElement.scrollTop = 0;
+    }
+  }, [conversationResetToken, stopListening]);
+
+  useEffect(() => {
+    const transcriptElement = transcriptRef.current;
+
+    if (!transcriptElement) {
+      return;
+    }
+
+    const distanceFromBottom =
+      transcriptElement.scrollHeight - transcriptElement.scrollTop - transcriptElement.clientHeight;
+
+    if (distanceFromBottom < 80) {
+      transcriptElement.scrollTop = transcriptElement.scrollHeight;
+    }
   }, [messages]);
 
   const updateEmotionFromMood = (mood: string | null) => {
@@ -190,8 +227,21 @@ export function VoiceHub({ onTriggerCrisis, sessionId, onSessionIdChange }: Voic
 
       {/* Chat panel */}
       <div className="flex-1 min-h-0 w-full max-w-4xl mx-auto glass-panel rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-5 mb-4 sm:mb-6 flex flex-col overflow-hidden">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-mc-text">Conversation</p>
+            <p className="text-xs text-mc-text-muted">Start a fresh chat to clear the previous session.</p>
+          </div>
+          <button
+            onClick={onRestartConversation}
+            className="shrink-0 rounded-full border border-mc-border bg-mc-surface-solid px-4 py-2 text-sm font-medium text-mc-text hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+          >
+            New chat
+          </button>
+        </div>
+
         {/* Transcript */}
-        <div className="flex-1 overflow-y-auto mb-3 pr-1 sm:pr-2 space-y-3">
+        <div ref={transcriptRef} className="flex-1 overflow-y-auto mb-3 pr-1 sm:pr-2 space-y-3">
           {messages.map((msg) => (
             <motion.div
               key={msg.id}
@@ -209,7 +259,6 @@ export function VoiceHub({ onTriggerCrisis, sessionId, onSessionIdChange }: Voic
               </p>
             </motion.div>
           ))}
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Quick Commands */}
