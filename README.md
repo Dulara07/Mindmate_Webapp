@@ -68,8 +68,8 @@ The application processes user input through a simple rule-based dialogue engine
 ### Prerequisites
 
 Make sure you have the following installed:
-- Node.js (v18 or later recommended)
-- npm (comes with Node.js)
+- Node.js (24.16.0)
+- npm (10.8.1)
 - Git
 
 ### Clone the Repository
@@ -79,20 +79,37 @@ git clone https://github.com/Dulara07/MindCare_Webapp.git
 cd MindCare_Webapp
 ```
 
-### Install Dependencies
+### Install Dependencies (Windows PowerShell / VS Code Terminal)
 
-#### Frontend
+Run these commands from the project root in the VS Code terminal:
 
-```bash
-cd Frontend
-npm install
+```powershell
+npm install --prefix Backend
+npm install --prefix Frontend
 ```
 
-#### Backend
+Alternative (same result):
 
-```bash
-cd ../Backend
+```powershell
+cd Backend
 npm install
+cd ..\Frontend
+npm install
+cd ..
+```
+
+### Optional: requirements installer script
+
+If you want to install using the requirements file, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-requirements.ps1
+```
+
+Preview commands only:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install-requirements.ps1 -DryRun
 ```
 
 ### Run the Application
