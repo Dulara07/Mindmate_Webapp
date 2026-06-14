@@ -1,4 +1,4 @@
-# MindCare 🧠💙
+# MindCare
 
 MindCare is a web-based **Voice User Interface (VUI)** application developed as part of the **Speech Interface (SWST 44042)** module at the **Faculty of Computing and Technology, University of Kelaniya**.
 
@@ -6,21 +6,21 @@ The application is designed to provide accessible mental health and wellbeing su
 
 ---
 
-## ✨ Features
+## Features
 
-- 🎙️ Voice-based interaction using Speech-to-Text (STT) and Text-to-Speech (TTS)
-- 💬 Rule-based conversational assistant
-- 😊 Mood tracking and daily emotional check-ins
-- 🫁 Guided breathing and relaxation exercises
-- 😴 Sleep hygiene tips and guided sleep support
-- 📚 Psychoeducation resources related to common mental health conditions
-- 🚨 Emergency help section with useful contact information
-- 🤖 Interactive 3D virtual assistant
-- 🔒 No login required (mood history is stored locally using browser cache)
+- Voice-based interaction using Speech-to-Text (STT) and Text-to-Speech (TTS)
+- Rule-based conversational assistant
+- Mood tracking and daily emotional check-ins
+- Guided breathing and relaxation exercises
+- Sleep hygiene tips and guided sleep support
+- Psychoeducation resources related to common mental health conditions
+- Emergency help section with useful contact information
+- Interactive 3D virtual assistant
+- No login required (mood history is stored locally using browser cache)
 
 ---
 
-## 🏗️ System Overview
+## System Overview
 
 The user first enters the **Voice Hub**, where they can interact with the 3D virtual assistant using voice, typing, or on-screen buttons.
 
@@ -36,7 +36,7 @@ The application processes user input through a simple rule-based dialogue engine
 
 ---
 
-## ⚙️ Technology Stack
+## Technology Stack
 
 ### Frontend
 - React
@@ -63,7 +63,7 @@ The application processes user input through a simple rule-based dialogue engine
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -121,7 +121,7 @@ http://localhost:5173
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 MindCare_Webapp/
@@ -135,7 +135,7 @@ MindCare_Webapp/
 
 ---
 
-## 🧩 How It Works
+## How It Works
 
 1. User enters the Voice Hub.
 2. Voice or text input is provided.
@@ -147,7 +147,7 @@ MindCare_Webapp/
 
 ---
 
-## 👥 Team Members
+## Team Members
 
 | Name | Student ID | Main Contribution |
 |------|------------|------------------|
@@ -159,7 +159,7 @@ MindCare_Webapp/
 
 ---
 
-## 🎯 Academic Information
+## Academic Information
 
 - **Module:** Speech Interface
 - **Module Code:** SWST 44042
@@ -170,12 +170,12 @@ MindCare_Webapp/
 
 ---
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 MindCare is developed as an academic project and is intended to provide general wellbeing guidance and educational resources only. It is **not a substitute for professional medical advice, diagnosis, or treatment**. If a user is experiencing a mental health crisis, they should immediately contact a qualified healthcare professional or an appropriate emergency support service.
 
 ---
 
-## 📄 License
+## License
 
 This project was developed for educational purposes as part of the SWST 44042 Speech Interface module.
