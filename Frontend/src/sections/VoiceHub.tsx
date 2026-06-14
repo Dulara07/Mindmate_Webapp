@@ -52,7 +52,7 @@ export function VoiceHub({
     onTranscript: (text) => {
       setInputText(text);
       handleSendRef.current(text);
-    }
+    },
   });
 
   useEffect(() => { setOrbState(voiceStatus); }, [voiceStatus]);
@@ -275,8 +275,12 @@ export function VoiceHub({
         </div>
 
         {/* Input */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-2">
+        <form className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-2" onSubmit={(e) => {
+          e.preventDefault();
+          handleSend(inputText);
+        }}>
           <button
+            type="button"
             onClick={toggleListening}
             className={cn(
               'w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-md flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed self-center sm:self-auto',
@@ -296,19 +300,18 @@ export function VoiceHub({
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend(inputText)}
               placeholder={isVoiceSupported ? 'Type or speak a message...' : 'Type a message...'}
               className="w-full bg-mc-surface-solid border border-mc-border rounded-full py-3 pl-6 pr-12 text-mc-text placeholder:text-mc-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-inner"
             />
             <button
-              onClick={() => handleSend(inputText)}
+              type="submit"
               disabled={!inputText.trim() || isSending}
               className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-blue-500 disabled:text-mc-text-muted transition-colors"
             >
               <Send className="w-4 h-4" />
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

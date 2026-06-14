@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type VoiceStatus = 'idle' | 'listening' | 'speaking';
 
@@ -51,7 +51,7 @@ export function useVoiceAssistant(options: VoiceAssistantOptions = {}) {
     );
   }, []);
 
-  const ensureRecognition = () => {
+  const ensureRecognition = useCallback(() => {
     if (recognitionRef.current) {
       return recognitionRef.current;
     }
@@ -113,9 +113,9 @@ export function useVoiceAssistant(options: VoiceAssistantOptions = {}) {
 
     recognitionRef.current = recognition;
     return recognition;
-  };
+  }, []);
 
-  const startListening = () => {
+  const startListening = useCallback(() => {
     if (!isSupported) {
       return false;
     }
@@ -132,23 +132,23 @@ export function useVoiceAssistant(options: VoiceAssistantOptions = {}) {
       setStatus('idle');
       return false;
     }
-  };
+  }, [ensureRecognition, isSupported]);
 
-  const stopListening = () => {
+  const stopListening = useCallback(() => {
     recognitionRef.current?.stop();
     setStatus((current) => (current === 'speaking' ? current : 'idle'));
-  };
+  }, []);
 
-  const toggleListening = () => {
+  const toggleListening = useCallback(() => {
     if (status === 'listening') {
       stopListening();
       return false;
     }
 
     return startListening();
-  };
+  }, [startListening, status, stopListening]);
 
-  const speak = (text: string) => {
+  const speak = useCallback((text: string) => {
     const speechSynthesisApi = window.speechSynthesis;
 
     if (!speechSynthesisApi) {
@@ -191,7 +191,7 @@ export function useVoiceAssistant(options: VoiceAssistantOptions = {}) {
 
     speechSynthesisApi.speak(utterance);
     return true;
-  };
+  }, []);
 
   return {
     isSupported,
